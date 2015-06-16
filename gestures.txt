@@ -1,0 +1,4 @@
+1.0 animations/Stand/Gestures/Explain_7
+3.0 animations/Stand/Gestures/Me_4
+5.0 animations/Stand/Gestures/Yes_1
+
