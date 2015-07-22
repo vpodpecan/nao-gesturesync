@@ -15,127 +15,6 @@
             <BehaviorLayer name="behavior_layer1">
                 <BehaviorKeyframe name="keyframe1" index="1">
                     <Diagram scale="100">
-                        <Box name="animate" id="7" localization="8" tooltip="" x="641" y="239">
-                            <bitmap>media/images/box/box-python-script.png</bitmap>
-                            <script language="4">
-                                <content>
-                                    <![CDATA[class MyClass(GeneratedClass):
-    def __init__(self):
-        GeneratedClass.__init__(self, False)
-        self.player = ALProxy('ALAudioPlayer')
-        self.playerStop = ALProxy('ALAudioPlayer', True)
-        self.bmanager = ALProxy("ALBehaviorManager")
-        self.framemanager = ALProxy("ALFrameManager")
-
-
-    def onLoad(self):
-        self.audioID = None
-        self.audioFilename = None
-        self.markersFilename = None
-        self.markers = None
-
-
-    def onUnload(self):
-        if self.audioID is not None:
-            try:
-                self.playerStop.stop(self.audioID)
-            except Exception as e:
-                self.logger.info('Cannot stop: ' + str(e))
-        self.audioID = None
-        self.audioFilename = None
-        self.markersFilename = None
-        self.markers = None
-
-
-    def onInput_audioFname(self, fn):
-        #self.audioFilename = str(self.framemanager.getBehaviorPath(self.behaviorId) + fn)
-        self.audioFilename = str(fn)
-
-
-    def onInput_markersFname(self, fn):
-        #self.markersFilename = str(self.framemanager.getBehaviorPath(self.behaviorId) + fn)
-        self.markersFilename = str(fn)
-
-        markers = []
-        with open(self.markersFilename) as fp:
-            for line in fp:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                data = line.split()
-                markers.append((float(data[0]), str(data[1])))
-        self.markers = markers
-
-
-    def onInput_onStart(self):
-        from time import time, sleep
-        #import numpy as np
-
-        if self.audioFilename is None or self.markersFilename is None:
-            self.logger.error('run gesture: not all input files are present!')
-            return
-
-#        times = np.array([x[0] for x in self.markers])
-        times = []
-        for x in self.markers: times.append(x[0])
-        # if the closest marker is farther away do not start its gesture
-        maxDiff = float(self.getParameter("max distance to closest"))
-        stopPrev = bool(self.getParameter("stop previous behaviour"))
-
-        self.audioID = self.player.post.playFile(self.audioFilename)
-
-        start = time()
-        currGesture = ''
-        while True:
-            tdif = time()-start
-            #diffs = np.abs(times-tdif)
-            diffs = []
-            for t in times:
-                diffs.append(abs(t-tdif))
-            iClosest = diffs.index(min(diffs))
-            #iClosest = np.argmin(diffs)
-            diff = diffs[iClosest]
-            if diff < maxDiff:
-                pos, gesture = self.markers[iClosest]
-                if gesture != currGesture:
-                    if stopPrev:
-                        if currGesture != '':
-                            self.bmanager.stopBehavior(currGesture)
-                    if not self.bmanager.isBehaviorRunning(currGesture):
-                        currGesture = gesture
-                        self.bmanager.preloadBehavior(currGesture)
-                        self.bmanager.startBehavior(currGesture)
-                    else:
-                        self.logger.warning('...still running...')
-            if iClosest==len(times)-1:
-                break
-            else:
-                delay = times[iClosest+1]-times[iClosest]-0.001
-                sleep(delay)
-        #end
-
-        # wait for gesture and audio to finish
-        while self.bmanager.isBehaviorRunning(currGesture):
-            sleep(0.5)
-        self.player.wait(self.audioID,0)
-
-        self.onStopped()
-    #end
-
-    def onInput_onStop(self):
-        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
-        self.onStopped() #activate the output of the box]]>
-</content>
-                            </script>
-                            <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
-                            <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
-                            <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
-                            <Input name="markersFname" type="3" type_size="1" nature="1" inner="0" tooltip="" id="4" />
-                            <Input name="audioFname" type="3" type_size="1" nature="1" inner="0" tooltip="" id="5" />
-                            <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="6" />
-                            <Parameter name="max distance to closest" inherits_from_parent="0" content_type="2" value="1" default_value="1.01" min="0" max="10" tooltip="the closest gesture won&apos;t start it its start time is farther than this away" id="7" />
-                            <Parameter name="stop previous behaviour" inherits_from_parent="0" content_type="0" value="1" default_value="0" tooltip="if set, the current behaviour will be forcibly stopped and the next one will be started&#x0A;WARNING: may lead to instability! Do not complain later, you have been warned :D" id="8" />
-                        </Box>
                         <Box name="wait 1" id="14" localization="8" tooltip="Wait a moment before triggering the output. &#x0A;Can be stopped anytime. &#x0A;Multiple inputs will trigger multiple outputs." x="351" y="132">
                             <bitmap>media/images/box/wait.png</bitmap>
                             <script language="4">
@@ -303,14 +182,163 @@
                             </Timeline>
                             <Resource name="All motors" type="Lock" timeout="0" />
                         </Box>
-                        <Link inputowner="7" indexofinput="2" outputowner="14" indexofoutput="4" />
-                        <Link inputowner="0" indexofinput="4" outputowner="7" indexofoutput="6" />
+                        <Box name="start pos" id="2" localization="8" tooltip="Send the number you entered when the input is stimulated." plugin="numberedit_plugin" x="369" y="588">
+                            <bitmap>media/images/box/interaction/vocabulary.png</bitmap>
+                            <script language="4">
+                                <content>
+                                    <![CDATA[# /!\ Generated content. Do not edit!
+class MyClass(GeneratedClass):
+	def __init__(self):
+		GeneratedClass.__init__(self)
+
+	def onInput_onStart(self):
+		self.onStopped(0)]]>
+</content>
+                            </script>
+                            <pluginContent>
+                                <number>0</number>
+                            </pluginContent>
+                            <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when Diagram is loaded." id="1" />
+                            <Input name="onStart" type="1" type_size="1" nature="1" inner="0" tooltip="To send the number on the output." id="2" />
+                            <Output name="onStopped" type="2" type_size="1" nature="2" inner="0" tooltip="The number you entered." id="3" />
+                        </Box>
+                        <Box name="animate (1)" id="5" localization="8" tooltip="" x="708" y="263">
+                            <bitmap>media/images/box/box-python-script.png</bitmap>
+                            <script language="4">
+                                <content>
+                                    <![CDATA[class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self, False)
+        self.player = ALProxy('ALAudioPlayer')
+        self.playerStop = ALProxy('ALAudioPlayer', True)
+        self.bmanager = ALProxy("ALBehaviorManager")
+        self.framemanager = ALProxy("ALFrameManager")
+
+
+    def onLoad(self):
+        self.audioID = None
+        self.audioFilename = None
+        self.markersFilename = None
+        self.markers = None
+        self.startpos = 0
+
+
+    def onUnload(self):
+        if self.audioID is not None:
+            try:
+                self.playerStop.stop(self.audioID)
+            except Exception as e:
+                self.logger.info('Cannot stop: ' + str(e))
+        self.audioID = None
+        self.audioFilename = None
+        self.markersFilename = None
+        self.markers = None
+        self.startpos = 0
+
+    def onInput_startPos(self, p):
+        self.startpos = int(p)
+
+    def onInput_audioFname(self, fn):
+        #self.audioFilename = str(self.framemanager.getBehaviorPath(self.behaviorId) + fn)
+        self.audioFilename = str(fn)
+
+
+    def onInput_markersFname(self, fn):
+        #self.markersFilename = str(self.framemanager.getBehaviorPath(self.behaviorId) + fn)
+        self.markersFilename = str(fn)
+
+        markers = []
+        with open(self.markersFilename) as fp:
+            for line in fp:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                data = line.split()
+                markers.append((float(data[0]), str(data[1])))
+        self.markers = markers
+
+    def onInput_onStart(self):
+        from time import time, sleep
+        #import numpy as np
+
+        if self.audioFilename is None or self.markersFilename is None:
+            self.logger.error('run gesture: not all input files are present!')
+            return
+
+#        times = np.array([x[0] for x in self.markers])
+        times = []
+        for x in self.markers: times.append(x[0])
+        # if the closest marker is farther away do not start its gesture
+        maxDiff = float(self.getParameter("max distance to closest"))
+        stopPrev = bool(self.getParameter("stop previous behaviour"))
+
+        if self.startpos != 0:
+            self.audioID = self.player.post.playFileFromPosition(self.audioFilename, self.startpos)
+        else:
+            self.audioID = self.player.post.playFile(self.audioFilename)
+
+        start = time()
+        currGesture = ''
+        while True:
+            tdif = time() - start + self.startpos
+            #diffs = np.abs(times-tdif)
+            diffs = []
+            for t in times:
+                diffs.append(abs(t-tdif))
+            iClosest = diffs.index(min(diffs))
+            #iClosest = np.argmin(diffs)
+            diff = diffs[iClosest]
+            if diff < maxDiff:
+                pos, gesture = self.markers[iClosest]
+                if gesture != currGesture:
+                    if stopPrev:
+                        if currGesture != '':
+                            self.bmanager.stopBehavior(currGesture)
+                    if not self.bmanager.isBehaviorRunning(currGesture):
+                        currGesture = gesture
+                        self.bmanager.preloadBehavior(currGesture)
+                        self.bmanager.startBehavior(currGesture)
+                    else:
+                        self.logger.warning('...still running...')
+            if iClosest==len(times)-1:
+                break
+            else:
+                delay = times[iClosest+1]-times[iClosest]-0.001
+                sleep(delay)
+        #end
+
+        # wait for gesture and audio to finish
+        while self.bmanager.isBehaviorRunning(currGesture):
+            sleep(0.5)
+        self.player.wait(self.audioID,0)
+
+        self.onStopped()
+    #end
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped() #activate the output of the box]]>
+</content>
+                            </script>
+                            <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+                            <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+                            <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+                            <Input name="markersFname" type="3" type_size="1" nature="1" inner="0" tooltip="" id="4" />
+                            <Input name="audioFname" type="3" type_size="1" nature="1" inner="0" tooltip="" id="5" />
+                            <Input name="startPos" type="2" type_size="1" nature="1" inner="0" tooltip="" id="6" />
+                            <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="7" />
+                            <Parameter name="max distance to closest" inherits_from_parent="0" content_type="2" value="1" default_value="1.01" min="0" max="10" tooltip="the closest gesture won&apos;t start it its start time is farther than this away" id="8" />
+                            <Parameter name="stop previous behaviour" inherits_from_parent="0" content_type="0" value="1" default_value="0" tooltip="if set, the current behaviour will be forcibly stopped and the next one will be started&#x0A;WARNING: may lead to instability! Do not complain later, you have been warned :D" id="9" />
+                        </Box>
                         <Link inputowner="3" indexofinput="2" outputowner="1" indexofoutput="4" />
                         <Link inputowner="4" indexofinput="2" outputowner="1" indexofoutput="4" />
-                        <Link inputowner="7" indexofinput="4" outputowner="3" indexofoutput="3" />
-                        <Link inputowner="7" indexofinput="5" outputowner="4" indexofoutput="3" />
                         <Link inputowner="14" indexofinput="2" outputowner="1" indexofoutput="4" />
                         <Link inputowner="1" indexofinput="2" outputowner="0" indexofoutput="2" />
+                        <Link inputowner="5" indexofinput="6" outputowner="2" indexofoutput="3" />
+                        <Link inputowner="5" indexofinput="5" outputowner="4" indexofoutput="3" />
+                        <Link inputowner="5" indexofinput="4" outputowner="3" indexofoutput="3" />
+                        <Link inputowner="5" indexofinput="2" outputowner="14" indexofoutput="4" />
+                        <Link inputowner="0" indexofinput="4" outputowner="5" indexofoutput="7" />
                     </Diagram>
                 </BehaviorKeyframe>
             </BehaviorLayer>
